@@ -1,6 +1,7 @@
 # Arkanoid
 
 The game Arkanoid made with browser popups :)
+Visit: https://peterattardi.github.io/Arkanoid/
 
 # In order for this to work
 
