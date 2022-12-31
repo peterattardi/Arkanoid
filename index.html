@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arkanoid by peteratt</title>
+  </head>
+  <body>
+    <script>
+      // inspired by: https://youtu.be/5JJrJGZ_LjM?t=4019
+
+      // Utils
+
+      const clearPopups = (popups, controller, ball) => {
+        popups.forEach((popup) => {
+          popup.close();
+        });
+        Object.assign(popups, []);
+        controller.close();
+        ball.close();
+      };
+
+      const createPopup = ({ path, height, width, top, left }) => {
+        const popup = window.open(
+          path,
+          "_blank",
+          `location=yes,height=${height},width=${width},top=${top},left=${left}`
+        );
+
+        console.log(top);
+
+        popup.pos = {
+          height,
+          width,
+          top: top,
+          left: left,
+        };
+
+        return popup;
+      };
+
+      const overlaps = (window1, window2) => {
+        const isInHoriztonalBounds =
+          window1.pos.left - 50 < window2.pos.left + window2.pos.width &&
+          window1.pos.left + window1.pos.width > window2.pos.left - 50;
+        const isInVerticalBounds =
+          window1.pos.top - 50 < window2.pos.top + window2.pos.height &&
+          window1.pos.top + window1.pos.height > window2.pos.top - 50;
+        const isOverlapping = isInHoriztonalBounds && isInVerticalBounds;
+        return isOverlapping;
+      };
+
+      //  //  //  //  //  //  //  //  //  //  //
+
+      // INITIALIZE
+
+      const h1 = document.createElement("h1");
+      h1.innerText = "PRESS SPACE BAR TO START";
+      document.body.appendChild(h1);
+
+      window.onmousemove = ({ clientX, clientY }) => {
+        this._clientX = clientX;
+        this._clientY = clientY;
+      };
+
+      const POPUP_WIDTH = 100;
+      const POPUP_HEIGHT = 50;
+      const { deviceWidth } = getResolution();
+      const numberOfPopups = Math.floor((deviceWidth * 0.3) / POPUP_WIDTH);
+      let left = 0;
+      let popups = [];
+
+      //  //  //  //  //  //  //  //  //  //  //
+
+      window.onkeydown = (ev) => {
+        switch (ev.keyCode) {
+          case 32:
+            if (popups.length === 0) {
+              [...Array(numberOfPopups).keys()].forEach(() => {
+                const popup = createPopup({
+                  path: "components/tile.html",
+                  height: POPUP_HEIGHT,
+                  width: POPUP_WIDTH,
+                  left,
+                  top: 0,
+                });
+                left += 150;
+                popups.push(popup);
+              });
+
+              left = 0;
+
+              [...Array(numberOfPopups - 1).keys()].forEach(() => {
+                const popup = createPopup({
+                  path: "components/tile.html",
+                  height: POPUP_HEIGHT,
+                  width: POPUP_WIDTH,
+                  top: 150,
+                  left: 50 + left,
+                });
+
+                left += 150;
+                popups.push(popup);
+              });
+            }
+
+            const ball = createPopup({
+              path: "components/ball.html",
+              height: POPUP_HEIGHT,
+              width: POPUP_WIDTH,
+              top: 300,
+              left: 500,
+            });
+
+            ball.popups = popups;
+            ball.overlaps = overlaps;
+
+            const controller = createPopup({
+              path: "components/controller.html",
+              height: 75,
+              width: 300,
+              top: this._clientY || 300,
+              left: this._clientX - 120 || 300,
+            });
+
+            controller.clearPopups = () =>
+              clearPopups(popups, controller, ball);
+
+            let vx = -4;
+            let vy = -4;
+            setInterval(() => {
+              ball.moveBy(vx, vy);
+              ball.pos = {
+                ...ball.pos,
+                left: ball.pos.left + vx,
+                top: ball.pos.top + vy,
+              };
+
+              if (ball.pos.top <= 20 || overlaps(controller, ball)) {
+                vy *= -1;
+              }
+
+              if (ball.pos.left <= 0 || ball.pos.left >= window.screen.width) {
+                vx *= -1;
+              }
+
+              this.document.body.innerText = popups.length;
+              if (popups.length === 0) {
+                this.document.body.innerText = "YOU WON";
+                this.document.querySelector("html").style.background = "green";
+                clearPopups(popups, controller, ball);
+              }
+            }, 100);
+
+          default:
+            break;
+        }
+      };
+
+      function getResolution() {
+        const deviceWidth = window.screen.width * window.devicePixelRatio;
+        const deviceHeight = window.screen.height * window.devicePixelRatio;
+        return { deviceWidth, deviceHeight };
+      }
+    </script>
+  </body>
+</html>
