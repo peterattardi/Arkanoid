@@ -141,7 +141,10 @@
                 vy *= -1;
               }
 
-              if (ball.pos.left <= 0 || ball.pos.left >= 1000) {
+              if (
+                ball.pos.left <= 0 ||
+                ball.pos.left >= numberOfPopups * POPUP_WIDTH
+              ) {
                 vx *= -1;
               }
 
