@@ -102,7 +102,7 @@
             if (popups.length === 0) {
               [...Array(numberOfPopups).keys()].forEach(() => {
                 const popup = createPopup({
-                  path: "/slide.html",
+                  path: "slide.html",
                   height: POPUP_HEIGHT,
                   width: POPUP_WIDTH,
                   left,
@@ -116,7 +116,7 @@
 
               [...Array(numberOfPopups - 1).keys()].forEach(() => {
                 const popup = createPopup({
-                  path: "/slide.html",
+                  path: "slide.html",
                   height: POPUP_HEIGHT,
                   width: POPUP_WIDTH,
                   top: 150,
@@ -129,7 +129,7 @@
             }
 
             const ball = createPopup({
-              path: "/ball.html",
+              path: "ball.html",
               height: POPUP_HEIGHT,
               width: POPUP_WIDTH,
               top: 300,
@@ -140,7 +140,7 @@
             ball.overlaps = overlaps;
 
             const controller = createPopup({
-              path: "/controller.html",
+              path: "controller.html",
               height: 75,
               width: 300,
               top: this._clientY || 300,
