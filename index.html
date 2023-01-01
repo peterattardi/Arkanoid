@@ -42,11 +42,11 @@
 
       const overlaps = (window1, window2) => {
         const isInHoriztonalBounds =
-          window1.pos.left - 50 < window2.pos.left + window2.pos.width &&
-          window1.pos.left + window1.pos.width > window2.pos.left - 50;
+          window1.pos.left < window2.pos.left + 2 * window2.pos.width &&
+          window1.pos.left + 2 * window1.pos.width > window2.pos.left;
         const isInVerticalBounds =
-          window1.pos.top - 50 < window2.pos.top + window2.pos.height &&
-          window1.pos.top + window1.pos.height > window2.pos.top - 50;
+          window1.pos.top < window2.pos.top + 2 * window2.pos.height &&
+          window1.pos.top + 2 * window1.pos.height > window2.pos.top;
         const isOverlapping = isInHoriztonalBounds && isInVerticalBounds;
         return isOverlapping;
       };
@@ -66,10 +66,21 @@
 
       const POPUP_WIDTH = 100;
       const POPUP_HEIGHT = 50;
-      const { deviceWidth } = getResolution();
-      const numberOfPopups = Math.floor((deviceWidth * 0.3) / POPUP_WIDTH);
-      let left = 0;
+      const GAP = 50;
+      let OFFSET = 0;
+
+      const numberOfPopups = Math.floor(
+        window.screen.width / (POPUP_WIDTH + GAP)
+      );
+
+      if ((window.screen.width / (POPUP_WIDTH + GAP)) % 1 !== 0) {
+        OFFSET = (window.screen.width % (POPUP_WIDTH + GAP)) * 0.5;
+      }
+
+      let left = OFFSET;
       let popups = [];
+
+      console.log(window.screen.width);
 
       //  //  //  //  //  //  //  //  //  //  //
 
@@ -85,11 +96,11 @@
                   left,
                   top: 0,
                 });
-                left += 150;
+                left += POPUP_WIDTH + GAP;
                 popups.push(popup);
               });
 
-              left = 0;
+              left = OFFSET;
 
               [...Array(numberOfPopups - 1).keys()].forEach(() => {
                 const popup = createPopup({
@@ -100,15 +111,15 @@
                   left: 50 + left,
                 });
 
-                left += 150;
+                left += POPUP_WIDTH + GAP;
                 popups.push(popup);
               });
             }
 
             const ball = createPopup({
               path: "components/ball.html",
-              height: POPUP_HEIGHT,
-              width: POPUP_WIDTH,
+              height: 50,
+              width: 50,
               top: 300,
               left: 500,
             });
@@ -120,15 +131,20 @@
               path: "components/controller.html",
               height: 75,
               width: 300,
-              top: this._clientY || 300,
-              left: this._clientX - 120 || 300,
+              top: Math.max(this._clientY || 0, 600),
+              left: Math.max(this._clientX - 120 || 300, 600),
             });
 
             controller.clearPopups = () =>
               clearPopups(popups, controller, ball);
 
-            let vx = -4;
-            let vy = -4;
+            let vx = -10;
+            let vy = -10;
+
+            ball.revert = () => {
+              vy *= -1;
+            };
+
             setInterval(() => {
               ball.moveBy(vx, vy);
               ball.pos = {
@@ -137,11 +153,18 @@
                 top: ball.pos.top + vy,
               };
 
-              if (ball.pos.top <= 20 || overlaps(controller, ball)) {
+              if (
+                ball.pos.top <= 20 ||
+                overlaps(ball, controller) ||
+                ball.pos.top + 2 * ball.pos.height >= window.screen.availHeight
+              ) {
                 vy *= -1;
               }
 
-              if (ball.pos.left <= 0 || ball.pos.left >= window.screen.width) {
+              if (
+                ball.pos.left <= 0 ||
+                ball.pos.left + 2 * ball.pos.width >= window.screen.width
+              ) {
                 vx *= -1;
               }
 
