@@ -12,21 +12,19 @@
 
       // Utils
 
-      const clearPopups = (popups) => {
-        popups.forEach((popup) => {
+      const clearPopups = () => {
+        this.popups.forEach((popup) => {
           popup.close();
         });
-        Object.assign(popups, []);
+        Object.assign(this.popups, []);
       };
 
       const createPopup = ({ path, height, width, top, left }) => {
         const popup = window.open(
           path,
           "_blank",
-          `popup=yes,location=yes,height=${height},width=${width},top=${top},left=${left}`
+          `popup=yes,location=yes,height=${height},width=${width},top=${top},left=${left},scrollabars=no,resizable=no`
         );
-
-        console.log(top);
 
         popup.pos = {
           height,
@@ -38,7 +36,7 @@
         return popup;
       };
 
-      const overlaps = (window1, window2) => {
+      this.overlaps = (window1, window2) => {
         const isInHoriztonalBounds =
           window1.pos.left < window2.pos.left + 2 * window2.pos.width &&
           window1.pos.left + 2 * window1.pos.width > window2.pos.left;
@@ -49,166 +47,208 @@
         return isOverlapping;
       };
 
-      //  //  //  //  //  //  //  //  //  //  //
+      const initialize = () => {
+        const h1 = document.createElement("h1");
+        h1.innerText = "PRESS SPACE BAR TO START";
+        document.body.appendChild(h1);
+        this._clientX = 400;
+        this.clientY = 800;
+        this.backgroundAudio = new Audio("./assets/background.mp3");
+        backgroundAudio.loop = true;
 
-      // INITIALIZE
+        this.window.onmousemove = ({ clientX, clientY }) => {
+          this._clientX = clientX;
+          this._clientY = clientY;
+        };
 
-      const h1 = document.createElement("h1");
-      h1.innerText = "PRESS SPACE BAR TO START";
-      document.body.appendChild(h1);
-      this._clientX = 400;
-      this.clientY = 800;
+        this.POPUP_WIDTH = 100;
+        this.POPUP_HEIGHT = 50;
+        this.GAP = 50;
+        this.numberOfPopups = Math.floor(
+          window.screen.width / (POPUP_WIDTH + GAP)
+        );
+        this.offset = (window.screen.width % (POPUP_WIDTH + GAP)) * 0.5;
 
-      const backgroundAudio = new Audio("./assets/background.mp3");
-      backgroundAudio.loop = true;
-
-      window.onmousemove = ({ clientX, clientY }) => {
-        this._clientX = clientX;
-        this._clientY = clientY;
+        this.left = offset;
+        this.popups = [];
       };
 
-      const POPUP_WIDTH = 100;
-      const POPUP_HEIGHT = 50;
-      const GAP = 50;
-      let OFFSET = 0;
+      const moveTheBall = () => {
+        const controller = this.controller;
+        this.ball.moveBy(vx, vy);
+        this.ball.pos = {
+          ...this.ball.pos,
+          left: this.ball.pos.left + this.vx,
+          top: this.ball.pos.top + this.vy,
+        };
 
-      const numberOfPopups = Math.floor(
-        window.screen.width / (POPUP_WIDTH + GAP)
-      );
+        if (
+          this.ball.pos.top <= 20 ||
+          overlaps(this.ball, this.controller) ||
+          this.ball.pos.top + 2 * this.ball.pos.height >=
+            window.screen.availHeight
+        ) {
+          this.vy *= -1;
+        }
 
-      if ((window.screen.width / (POPUP_WIDTH + GAP)) % 1 !== 0) {
-        OFFSET = (window.screen.width % (POPUP_WIDTH + GAP)) * 0.5;
-      }
+        if (
+          this.ball.pos.left <= 0 ||
+          this.ball.pos.left + 2 * this.ball.pos.width >= window.screen.width
+        ) {
+          this.vx *= -1;
+        }
 
-      let left = OFFSET;
-      let popups = [];
+        this.document.body.innerText = this.popups.length;
+        if (this.popups.length === 0 && this.isPlaying) {
+          this.isPlaying = false;
+          this.backgroundAudio.pause();
+          this.backgroundAudio.currentTime = 0;
+          new Audio("./assets/victory.mp3").play();
 
-      console.log(window.screen.width);
+          this.document.querySelector("html").style.background = "green";
 
-      //  //  //  //  //  //  //  //  //  //  //
+          this.controller.close();
+          this.ball.close();
+
+          this.left = 0;
+
+          clearPopups();
+        } else {
+          requestAnimationFrame(moveTheBall);
+        }
+      };
+
+      const start = () => {
+        this.vx = -4;
+        this.vy = -4;
+        this.backgroundAudio.play();
+        requestAnimationFrame(moveTheBall);
+      };
+
+      const handleOpenController = (window) => {
+        const controller = createPopup({
+          path: "components/controller.html",
+          height: 75,
+          width: 300,
+          top: window._clientY,
+          left: window._clientX - 120,
+        });
+
+        window.isPlaying = true;
+
+        window.controller = controller;
+
+        controller.onkeydown = ({ keyCode }) => {
+          switch (keyCode) {
+            case 81:
+              clearPopups();
+              window.backgroundAudio.pause();
+              window.backgroundAudio.currentTime = 0;
+              window.controller.close();
+              window.ball.close();
+              break;
+
+            default:
+              break;
+          }
+        };
+
+        setTimeout(() => {
+          window.popups.forEach((element) => {
+            element.clearInterval(element.interval);
+          });
+          start();
+        }, 1500);
+      };
+
+      const handleOpenBall = (window) => {
+        const ball = createPopup({
+          path: "components/ball.html",
+          height: 50,
+          width: 50,
+          top: 400,
+          left: 400,
+        });
+        ball.popups = popups;
+        ball.overlaps = overlaps;
+
+        window.ball = ball;
+
+        ball.onkeydown = ({ keyCode }) => {
+          switch (keyCode) {
+            case 32:
+              handleOpenController(window);
+              break;
+
+            case 81:
+              clearPopups();
+              break;
+            default:
+              break;
+          }
+        };
+
+        ball.onHit = () => {
+          new Audio("./assets/hit.mp3").play();
+        };
+
+        ball.revert = () => {
+          this.vy *= -1;
+        };
+      };
+
+      const handleOpenPopup = (window) => {
+        if (window.popups.length >= 2 * numberOfPopups - 1) {
+          handleOpenBall(window);
+          return;
+        }
+        let top = 0;
+        if (window.popups.length === numberOfPopups) {
+          window.left = window.offset;
+        }
+
+        if (window.popups.length >= numberOfPopups) {
+          top = window.POPUP_HEIGHT * 3;
+        }
+
+        const newPopup = createPopup({
+          path: "components/tile.html",
+          height: window.POPUP_HEIGHT,
+          width: window.POPUP_WIDTH,
+          left: window.left,
+          top,
+        });
+
+        window.left += window.POPUP_WIDTH + window.GAP;
+        window.popups.push(newPopup);
+
+        console.log(newPopup);
+
+        newPopup.onkeydown = ({ keyCode }) => {
+          switch (keyCode) {
+            case 81:
+              clearPopups(window.popups);
+              break;
+            case 32:
+              handleOpenPopup(window);
+              break;
+
+            default:
+              break;
+          }
+        };
+      };
 
       window.onkeydown = (ev) => {
         switch (ev.keyCode) {
           case 32:
-            if (!this.isPlaying) {
-              this.isPlaying = true;
-              [...Array(numberOfPopups).keys()].forEach(() => {
-                const popup = createPopup({
-                  path: "components/tile.html",
-                  height: POPUP_HEIGHT,
-                  width: POPUP_WIDTH,
-                  left,
-                  top: 0,
-                });
-                left += POPUP_WIDTH + GAP;
-                popups.push(popup);
-              });
-
-              left = OFFSET;
-
-              [...Array(numberOfPopups - 1).keys()].forEach(() => {
-                const popup = createPopup({
-                  path: "components/tile.html",
-                  height: POPUP_HEIGHT,
-                  width: POPUP_WIDTH,
-                  top: 150,
-                  left: 50 + left,
-                });
-
-                left += POPUP_WIDTH + GAP;
-                popups.push(popup);
-              });
-            }
-
-            const ball = createPopup({
-              path: "components/ball.html",
-              height: 50,
-              width: 50,
-              top: 400,
-              left: 400,
-            });
-
-            ball.popups = popups;
-            ball.overlaps = overlaps;
-
-            const controller = createPopup({
-              path: "components/controller.html",
-              height: 75,
-              width: 300,
-              top: Math.max(this._clientY),
-              left: Math.max(this._clientX - 120),
-            });
-
-            controller.clearPopups = () => {
-              backgroundAudio.pause();
-              backgroundAudio.currentTime = 0;
-              controller.close();
-              ball.close();
-              clearPopups(popups);
-            };
-
-            let vx = -10;
-            let vy = -10;
-
-            ball.onHit = () => {
-              new Audio("./assets/hit.mp3").play();
-            };
-
-            ball.revert = () => {
-              vy *= -1;
-            };
-
-            setTimeout(() => {
-              backgroundAudio.play();
-              setInterval(() => {
-                ball.moveBy(vx, vy);
-                ball.pos = {
-                  ...ball.pos,
-                  left: ball.pos.left + vx,
-                  top: ball.pos.top + vy,
-                };
-
-                if (
-                  ball.pos.top <= 20 ||
-                  overlaps(ball, controller) ||
-                  ball.pos.top + 2 * ball.pos.height >=
-                    window.screen.availHeight
-                ) {
-                  vy *= -1;
-                }
-
-                if (
-                  ball.pos.left <= 0 ||
-                  ball.pos.left + 2 * ball.pos.width >= window.screen.width
-                ) {
-                  vx *= -1;
-                }
-
-                this.document.body.innerText = popups.length;
-                if (popups.length === 0 && this.isPlaying) {
-                  this.isPlaying = false;
-                  backgroundAudio.pause();
-                  backgroundAudio.currentTime = 0;
-                  new Audio("./assets/victory.mp3").play();
-
-                  this.document.body.innerText = "YOU WON";
-                  this.document.querySelector("html").style.background =
-                    "green";
-                  clearPopups(popups, controller, ball);
-                }
-              }, 100);
-            }, 4000);
-
+            handleOpenPopup(self);
           default:
             break;
         }
       };
 
-      function getResolution() {
-        const deviceWidth = window.screen.width * window.devicePixelRatio;
-        const deviceHeight = window.screen.height * window.devicePixelRatio;
-        return { deviceWidth, deviceHeight };
-      }
+      initialize();
     </script>
   </body>
 </html>

@@ -6,21 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tile</title>
   </head>
-  <body style="display: flex; justify-content: center; align-items: center">
+  <body
+    style="
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    "
+  >
     <script>
       // inspired by: https://youtu.be/5JJrJGZ_LjM?t=4019
       this.onload = () => {
         this.isSlide = true;
-        const interval = setInterval(
+        this.interval = setInterval(
           () =>
             (document.querySelector("html").style.background =
               "#" + Math.floor(Math.random() * 16777215).toString(16)),
           500
         );
-
-        setTimeout(() => {
-          this.clearInterval(interval);
-        }, 3000);
       };
     </script>
 
