@@ -9,12 +9,14 @@
   <body style="display: flex; justify-content: center; align-items: center">
     <script>
       // inspired by: https://youtu.be/5JJrJGZ_LjM?t=4019
+
       setInterval(() => {
         this.popups.forEach((popup, i) => {
           if (this.overlaps(this, popup)) {
             this.popups.splice(i, 1);
             popup.close();
             this.revert();
+            this.onHit();
           }
         });
       }, 100);

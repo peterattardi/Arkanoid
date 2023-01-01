@@ -12,20 +12,18 @@
 
       // Utils
 
-      const clearPopups = (popups, controller, ball) => {
+      const clearPopups = (popups) => {
         popups.forEach((popup) => {
           popup.close();
         });
         Object.assign(popups, []);
-        controller.close();
-        ball.close();
       };
 
       const createPopup = ({ path, height, width, top, left }) => {
         const popup = window.open(
           path,
           "_blank",
-          `location=yes,height=${height},width=${width},top=${top},left=${left}`
+          `popup=yes,location=yes,height=${height},width=${width},top=${top},left=${left}`
         );
 
         console.log(top);
@@ -58,6 +56,11 @@
       const h1 = document.createElement("h1");
       h1.innerText = "PRESS SPACE BAR TO START";
       document.body.appendChild(h1);
+      this._clientX = 400;
+      this.clientY = 800;
+
+      const backgroundAudio = new Audio("./assets/background.mp3");
+      backgroundAudio.loop = true;
 
       window.onmousemove = ({ clientX, clientY }) => {
         this._clientX = clientX;
@@ -87,7 +90,8 @@
       window.onkeydown = (ev) => {
         switch (ev.keyCode) {
           case 32:
-            if (popups.length === 0) {
+            if (!this.isPlaying) {
+              this.isPlaying = true;
               [...Array(numberOfPopups).keys()].forEach(() => {
                 const popup = createPopup({
                   path: "components/tile.html",
@@ -120,8 +124,8 @@
               path: "components/ball.html",
               height: 50,
               width: 50,
-              top: 300,
-              left: 500,
+              top: 400,
+              left: 400,
             });
 
             ball.popups = popups;
@@ -131,50 +135,69 @@
               path: "components/controller.html",
               height: 75,
               width: 300,
-              top: Math.max(this._clientY || 0, 600),
-              left: Math.max(this._clientX - 120 || 300, 600),
+              top: Math.max(this._clientY),
+              left: Math.max(this._clientX - 120),
             });
 
-            controller.clearPopups = () =>
-              clearPopups(popups, controller, ball);
+            controller.clearPopups = () => {
+              backgroundAudio.pause();
+              backgroundAudio.currentTime = 0;
+              controller.close();
+              ball.close();
+              clearPopups(popups);
+            };
 
             let vx = -10;
             let vy = -10;
+
+            ball.onHit = () => {
+              new Audio("./assets/hit.mp3").play();
+            };
 
             ball.revert = () => {
               vy *= -1;
             };
 
-            setInterval(() => {
-              ball.moveBy(vx, vy);
-              ball.pos = {
-                ...ball.pos,
-                left: ball.pos.left + vx,
-                top: ball.pos.top + vy,
-              };
+            setTimeout(() => {
+              backgroundAudio.play();
+              setInterval(() => {
+                ball.moveBy(vx, vy);
+                ball.pos = {
+                  ...ball.pos,
+                  left: ball.pos.left + vx,
+                  top: ball.pos.top + vy,
+                };
 
-              if (
-                ball.pos.top <= 20 ||
-                overlaps(ball, controller) ||
-                ball.pos.top + 2 * ball.pos.height >= window.screen.availHeight
-              ) {
-                vy *= -1;
-              }
+                if (
+                  ball.pos.top <= 20 ||
+                  overlaps(ball, controller) ||
+                  ball.pos.top + 2 * ball.pos.height >=
+                    window.screen.availHeight
+                ) {
+                  vy *= -1;
+                }
 
-              if (
-                ball.pos.left <= 0 ||
-                ball.pos.left + 2 * ball.pos.width >= window.screen.width
-              ) {
-                vx *= -1;
-              }
+                if (
+                  ball.pos.left <= 0 ||
+                  ball.pos.left + 2 * ball.pos.width >= window.screen.width
+                ) {
+                  vx *= -1;
+                }
 
-              this.document.body.innerText = popups.length;
-              if (popups.length === 0) {
-                this.document.body.innerText = "YOU WON";
-                this.document.querySelector("html").style.background = "green";
-                clearPopups(popups, controller, ball);
-              }
-            }, 100);
+                this.document.body.innerText = popups.length;
+                if (popups.length === 0 && this.isPlaying) {
+                  this.isPlaying = false;
+                  backgroundAudio.pause();
+                  backgroundAudio.currentTime = 0;
+                  new Audio("./assets/victory.mp3").play();
+
+                  this.document.body.innerText = "YOU WON";
+                  this.document.querySelector("html").style.background =
+                    "green";
+                  clearPopups(popups, controller, ball);
+                }
+              }, 100);
+            }, 4000);
 
           default:
             break;
