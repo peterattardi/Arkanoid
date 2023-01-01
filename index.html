@@ -33,6 +33,8 @@
           left: left,
         };
 
+        new Audio("./assets/open.mp3").play();
+
         return popup;
       };
 
@@ -204,7 +206,7 @@
         }
         let top = 0;
         if (window.popups.length === numberOfPopups) {
-          window.left = window.offset;
+          window.left = window.offset + window.GAP;
         }
 
         if (window.popups.length >= numberOfPopups) {
