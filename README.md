@@ -2,8 +2,10 @@
 
 The game Arkanoid made with browser popups :)
 
-Play with the [demo](https://peterattardi.github.io/Arkanoid/).
+Play the [demo](https://peterattardi.github.io/Arkanoid/).
 
-# Inspirations
+# Credits
 
-Inspired by https://youtu.be/5JJrJGZ_LjM?t=4019
+Inspired by https://youtu.be/5JJrJGZ_LjM?t=4019.
+
+The code has never been shared, so I made my own version
